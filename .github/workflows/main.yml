@@ -1,0 +1,47 @@
+name: Build and deploy to AKS
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Jberlinsky AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Build and Publish Docker image
+        uses: docker/build-push-action@v1.1.0
+        with:
+          username: ${{secrets.DOCKER_USER_NAME}}
+          password: ${{secrets.DOCKER_PASSWORD}} 
+          repository: xrouterserviceexplorer/blockdx.api
+          dockerfile: ./BlockDX.Api/Dockerfile
+          tags: ${{ github.sha }}
+          
+      - name: Find and Replace deployment manifest
+        uses: jacobtomlinson/gha-find-replace@master
+        with:
+          find: "PLACEHOLDER_IMAGE_LOCATION"
+          replace:  xrouterserviceexplorer/blockdx.api:${{ github.sha }}
+          include: "./BlockDX.Api/deployment.yml" 
+        
+
+      - name: Deploy Docker Image
+        uses: Jberlinsky/kubernetes-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: -n luciendev apply -f ./BlockDX.Api/deployment.yml
