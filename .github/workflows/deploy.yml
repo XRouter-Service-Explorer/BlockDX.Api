@@ -22,6 +22,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
           
+      - name: Find and Replace deployment xcloud url
+        uses: jacobtomlinson/gha-find-replace@master
+        with:
+          find: XCLOUD_URL
+          replace: ${{ secrets.XCLOUD_URL }} 
+          
+      - name: Find and Replace deployment coininfo url
+        uses: jacobtomlinson/gha-find-replace@master
+        with:
+          find: COININFO_URL
+          replace: ${{ secrets.COININFO_URL }}
+          
       - name: Build and Publish Docker image
         uses: docker/build-push-action@v1.1.0
         with:
@@ -36,18 +48,6 @@ jobs:
         with:
           find: PLACEHOLDER_IMAGE_LOCATION
           replace:  xrouterserviceexplorer/blockdx.api:${{ github.sha }}   
-          
-      - name: Find and Replace deployment xcloud url
-        uses: jacobtomlinson/gha-find-replace@master
-        with:
-          find: XCLOUD_URL
-          replace: ${{ secrets.XCLOUD_URL }} 
-          
-      - name: Find and Replace deployment coininfo url
-        uses: jacobtomlinson/gha-find-replace@master
-        with:
-          find: COININFO_URL
-          replace: ${{ secrets.COININFO_URL }}
 
       - name: Deploy Docker Image
         uses: Jberlinsky/kubernetes-action@master
