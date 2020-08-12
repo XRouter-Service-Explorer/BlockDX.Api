@@ -12,7 +12,6 @@ dist/
 node_modules/
 
 # configuration files
-appsettings.json
 appsettings.Development.json
 # IDEs and editors
 /.idea
