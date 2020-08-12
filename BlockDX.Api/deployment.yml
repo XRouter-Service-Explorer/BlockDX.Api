@@ -26,7 +26,7 @@ items:
           run: blockdx-api
       spec:
         containers:
-        - image: lucienmartijn/blockdx.api:v1.1.8
+        - image: PLACEHOLDER_IMAGE_LOCATION
           imagePullPolicy: Always
           name: blockdx-api
           ports:
