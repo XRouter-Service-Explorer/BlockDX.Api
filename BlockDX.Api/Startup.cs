@@ -1,17 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BlockDX.Api.Core.Models;
 using BlockDX.Api.ExceptionHandling;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System;
 
 namespace BlockDX.Api
 {
@@ -44,10 +38,6 @@ namespace BlockDX.Api
             });
 
             var apiSettings = Configuration.GetSection("Api").Get<ApiSettings>();
-            services.AddHttpClient("xcloud", c =>
-            {
-                c.BaseAddress = new Uri(apiSettings.XCloudBaseAddress + "/api/xrs/");
-            });
 
             services.AddHttpClient("coininfo", c =>
             {
