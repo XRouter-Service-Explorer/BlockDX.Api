@@ -1,5 +1,9 @@
 using BlockDX.Api.Core.Models;
 using BlockDX.Api.ExceptionHandling;
+using Blocknet.Lib.CoinConfig;
+using Blocknet.Lib.Services;
+using Blocknet.Lib.Services.Coins.Base;
+using Blocknet.Lib.Services.Coins.Blocknet;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -43,6 +47,21 @@ namespace BlockDX.Api
             {
                 c.BaseAddress = new Uri(apiSettings.CoinInfoBaseAddress + "/api/coininfo/");
             });
+
+            var rpcSettings = Configuration.GetSection("CoinConfig").Get<CoinRpcConfig>();
+
+            services.AddTransient<ICoinService, CoinService>();
+
+            services.AddTransient<IXBridgeService>(service =>
+                new XBridgeService(
+                    //rpcSettings.Blocknet.DaemonUrl_testnet, 
+                    rpcSettings.Blocknet.DaemonUrl,
+                    rpcSettings.Blocknet.RpcUserName,
+                    rpcSettings.Blocknet.RpcPassword,
+                    rpcSettings.Blocknet.WalletPassword,
+                    rpcSettings.Blocknet.RpcRequestTimeoutInSeconds
+                    )
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

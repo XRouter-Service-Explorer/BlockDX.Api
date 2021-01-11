@@ -1,5 +1,7 @@
 ﻿using BlockDX.Api.Controllers.ViewModels;
 using BlockDX.Api.Core.Models;
+using BlockDX.Api.Enums;
+using Blocknet.Lib.Services.Coins.Blocknet;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -14,21 +16,20 @@ namespace BlockDX.Api.Controllers
     public class BlockDXController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IXBridgeService _xBridgeService;
 
-        public BlockDXController(IHttpClientFactory httpClientFactory)
+        public BlockDXController(
+            IHttpClientFactory httpClientFactory,
+            IXBridgeService xBridgeService)
         {
             _httpClientFactory = httpClientFactory;
+            _xBridgeService = xBridgeService;
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetOpenOrdersPerMarket()
+        public IActionResult GetOpenOrdersPerMarket()
         {
-            string baseUrl = "https://data.blocknet.co/api/v2.0/dxgetorders";
-
-            var client = _httpClientFactory.CreateClient();
-
-            var getOrdersTask = client.GetStringAsync(baseUrl);
-            var orders = JsonConvert.DeserializeObject<List<OpenOrder>>(await getOrdersTask);
+            var orders = _xBridgeService.dxGetOrders();
 
             var activeMarkets = orders.GroupBy(o => new { o.Maker, o.Taker })
                     .Select(group => new
@@ -41,11 +42,15 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetOneDayTotalTradesCount()
+        public IActionResult GetTotalTradesCount(TimeInterval timeInterval)
         {
-            var assetWhiteList = await GetBlockDXAssets();
+            var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
-            var tradeHistoryResponse = await GetOneDayTradeHistory();
+            // 1 BLOCK is 60 seconds.
+
+            var blocks = timeIntervalToBlockAmount(timeInterval);
+
+            var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
             var tradeHistories = tradeHistoryResponse
                 .Where(p =>
@@ -60,20 +65,22 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetOneDayTotalVolumePerCoin([FromQuery]string units)
+        public async Task<IActionResult> GetTotalVolumePerCoin(string units, TimeInterval timeInterval)
         {
             var unitList = units.Split(",").ToList();
             if (unitList.Count == 0)
                 return BadRequest("No units specified");
 
-            return Ok(await getOneDayTotalVolumePerCoin(unitList));
+            return Ok(await getTotalVolumePerCoin(unitList, timeInterval));
         }
 
-        private async Task<List<TokenTradeStatistics>> getOneDayTotalVolumePerCoin(List<string> units)
+        private async Task<List<TokenTradeStatistics>> getTotalVolumePerCoin(List<string> units, TimeInterval timeInterval)
         {
-            var assetWhiteList = await GetBlockDXAssets();
+            var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
-            var tradeHistoryResponse = await GetOneDayTradeHistory();
+            var blocks = timeIntervalToBlockAmount(timeInterval);
+
+            var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
             var tradeStatisticsTokens = new List<TokenTradeStatistics>();
 
@@ -145,7 +152,7 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetOneDayTotalVolume([FromQuery] string coin, [FromQuery]string units)
+        public async Task<IActionResult> GetTotalVolume(string coin, string units, TimeInterval timeInterval)
         {
             var unitList = units.Split(",").ToList();
             if (string.IsNullOrEmpty(coin))
@@ -153,7 +160,7 @@ namespace BlockDX.Api.Controllers
             if (unitList.Count == 0)
                 return BadRequest("No units specified");
 
-            var oneDayTotalVolumePerCoin = await getOneDayTotalVolumePerCoin(unitList);
+            var oneDayTotalVolumePerCoin = await getTotalVolumePerCoin(unitList, timeInterval);
 
             var totalVolumePerUnit = new List<TokenVolumeViewModel>();
 
@@ -185,11 +192,13 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetOneDayCompletedOrders()
+        public IActionResult GeCompletedOrders(TimeInterval timeInterval)
         {
-            var assetWhiteList = await GetBlockDXAssets();
+            var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
-            var tradeHistoryResponse = await GetOneDayTradeHistory();
+            var blocks = timeIntervalToBlockAmount(timeInterval);
+
+            var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
             var tradeStatisticsTokens = new List<TokenTradeStatistics>();
 
@@ -214,26 +223,36 @@ namespace BlockDX.Api.Controllers
             return Ok(coins);
         }
 
-        private async Task<List<DXAtomicSwap>> GetOneDayTradeHistory()
+        private int timeIntervalToBlockAmount(TimeInterval timeInterval)
         {
-            string baseUrl = "https://data.blocknet.co/api/v2.0/history";
+            // 1 block is one minute for BLOCK
+            int blocks;
 
-            var client = _httpClientFactory.CreateClient();
-
-            var getTradeHistoryTask = client.GetStringAsync(baseUrl);
-            return JsonConvert.DeserializeObject<List<DXAtomicSwap>>(await getTradeHistoryTask);
-        }
-
-        private async Task<List<string>> GetBlockDXAssets()
-        {
-            string baseUrl = "https://data.blocknet.co/api/v2.0/dxgetnetworktokens";
-
-            var client = _httpClientFactory.CreateClient();
-
-            var getAssetsTask = client.GetStringAsync(baseUrl);
-            var assets = JsonConvert.DeserializeObject<List<string>>(await getAssetsTask);
-
-            return assets;
+            switch (timeInterval)
+            {
+                case TimeInterval.FifteenMinutes:
+                    blocks = 15;
+                    break;
+                case TimeInterval.Hour:
+                    blocks = 60;
+                    break;
+                case TimeInterval.Day:
+                    blocks = 60 * 24;
+                    break;
+                case TimeInterval.Week:
+                    blocks = 60 * 24 * 7;
+                    break;
+                case TimeInterval.Month:
+                    blocks = 60 * 24 * 7 * 4;
+                    break;
+                case TimeInterval.Year:
+                    blocks = 60 * 24 * 7 * 52;
+                    break;
+                default:
+                    blocks = 0;
+                    break;
+            }
+            return blocks;
         }
     }
 }
