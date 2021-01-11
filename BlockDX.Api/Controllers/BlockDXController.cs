@@ -27,9 +27,15 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public IActionResult GetOpenOrdersPerMarket()
+        public async Task<IActionResult> GetOpenOrdersPerMarket()
         {
-            var orders = _xBridgeService.dxGetOrders();
+            //var orders = _xBridgeService.dxGetOrders();
+            string baseUrl = "https://data.blocknet.co/api/v2.0/dxgetorders";
+
+            var client = _httpClientFactory.CreateClient();
+
+            var getOrdersTask = client.GetStringAsync(baseUrl);
+            var orders = JsonConvert.DeserializeObject<List<OpenOrder>>(await getOrdersTask);
 
             var activeMarkets = orders.GroupBy(o => new { o.Maker, o.Taker })
                     .Select(group => new
