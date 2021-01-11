@@ -198,7 +198,7 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public IActionResult GeCompletedOrders(TimeInterval timeInterval)
+        public IActionResult GetTotalCompletedOrders(TimeInterval timeInterval)
         {
             var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
