@@ -48,13 +48,13 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public IActionResult GetTotalTradesCount(TimeInterval timeInterval)
+        public IActionResult GetTotalTradesCount(ElapsedTime elapsedTime)
         {
             var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
             // 1 BLOCK is 60 seconds.
 
-            var blocks = timeIntervalToBlockAmount(timeInterval);
+            var blocks = elapsedTimeToBlocks(elapsedTime);
 
             var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
@@ -71,20 +71,20 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetTotalVolumePerCoin(string units, TimeInterval timeInterval)
+        public async Task<IActionResult> GetTotalVolumePerCoin(string units, ElapsedTime elapsedTime)
         {
             var unitList = units.Split(",").ToList();
             if (unitList.Count == 0)
                 return BadRequest("No units specified");
 
-            return Ok(await getTotalVolumePerCoin(unitList, timeInterval));
+            return Ok(await getTotalVolumePerCoin(unitList, elapsedTime));
         }
 
-        private async Task<List<TokenTradeStatistics>> getTotalVolumePerCoin(List<string> units, TimeInterval timeInterval)
+        private async Task<List<TokenTradeStatistics>> getTotalVolumePerCoin(List<string> units, ElapsedTime elapsedTime)
         {
             var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
-            var blocks = timeIntervalToBlockAmount(timeInterval);
+            var blocks = elapsedTimeToBlocks(elapsedTime);
 
             var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
@@ -158,7 +158,7 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetTotalVolume(string coin, string units, TimeInterval timeInterval)
+        public async Task<IActionResult> GetTotalVolume(string coin, string units, ElapsedTime elapsedTime)
         {
             var unitList = units.Split(",").ToList();
             if (string.IsNullOrEmpty(coin))
@@ -166,7 +166,7 @@ namespace BlockDX.Api.Controllers
             if (unitList.Count == 0)
                 return BadRequest("No units specified");
 
-            var oneDayTotalVolumePerCoin = await getTotalVolumePerCoin(unitList, timeInterval);
+            var oneDayTotalVolumePerCoin = await getTotalVolumePerCoin(unitList, elapsedTime);
 
             var totalVolumePerUnit = new List<TokenVolumeViewModel>();
 
@@ -198,11 +198,11 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public IActionResult GetTotalCompletedOrders(TimeInterval timeInterval)
+        public IActionResult GetTotalCompletedOrders(ElapsedTime elapsedTime)
         {
             var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
 
-            var blocks = timeIntervalToBlockAmount(timeInterval);
+            var blocks = elapsedTimeToBlocks(elapsedTime);
 
             var tradeHistoryResponse = _xBridgeService.dxGetTradingData(blocks, false);
 
@@ -229,26 +229,26 @@ namespace BlockDX.Api.Controllers
             return Ok(coins);
         }
 
-        private int timeIntervalToBlockAmount(TimeInterval timeInterval)
+        private int elapsedTimeToBlocks(ElapsedTime elapsedTime)
         {
             // 1 block is one minute for BLOCK
             int blocks;
 
-            switch (timeInterval)
+            switch (elapsedTime)
             {
-                case TimeInterval.FiveMinutes:
+                case ElapsedTime.FiveMinutes:
                     blocks = 5;
                     break;
-                case TimeInterval.FifteenMinutes:
+                case ElapsedTime.FifteenMinutes:
                     blocks = 15;
                     break;
-                case TimeInterval.Hour:
+                case ElapsedTime.Hour:
                     blocks = 60;
                     break;
-                case TimeInterval.TwoHours:
+                case ElapsedTime.TwoHours:
                     blocks = 120;
                     break;
-                case TimeInterval.Day:
+                case ElapsedTime.Day:
                     blocks = 60 * 24;
                     break;
                 default:

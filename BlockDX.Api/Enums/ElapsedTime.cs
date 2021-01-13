@@ -1,6 +1,6 @@
 ﻿namespace BlockDX.Api.Enums
 {
-    public enum TimeInterval
+    public enum ElapsedTime
     {
         FiveMinutes = 0,
         FifteenMinutes = 1,
