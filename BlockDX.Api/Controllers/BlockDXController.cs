@@ -183,18 +183,9 @@ namespace BlockDX.Api.Controllers
                 return Ok(totalVolumePerUnit);
             }
 
-            foreach (var unit in unitList)
-            {
-                var sumVolume = oneDayTotalVolumePerCoin.Sum(vc => vc.Volumes.Where(vc => vc.Unit.Equals(unit)).Sum(vc => vc.Volume));
+            var volumeOneCoin = oneDayTotalVolumePerCoin.FirstOrDefault(v => v.Coin.Equals(coin));
 
-                totalVolumePerUnit.Add(new TokenVolumeViewModel
-                {
-                    Unit = unit,
-                    Volume = sumVolume
-                });
-            }
-
-            return Ok(totalVolumePerUnit);
+            return Ok(volumeOneCoin.Volumes);
         }
 
         [HttpGet("[action]")]
