@@ -236,23 +236,20 @@ namespace BlockDX.Api.Controllers
 
             switch (timeInterval)
             {
+                case TimeInterval.FiveMinutes:
+                    blocks = 5;
+                    break;
                 case TimeInterval.FifteenMinutes:
                     blocks = 15;
                     break;
                 case TimeInterval.Hour:
                     blocks = 60;
                     break;
+                case TimeInterval.TwoHours:
+                    blocks = 120;
+                    break;
                 case TimeInterval.Day:
                     blocks = 60 * 24;
-                    break;
-                case TimeInterval.Week:
-                    blocks = 60 * 24 * 7;
-                    break;
-                case TimeInterval.Month:
-                    blocks = 60 * 24 * 7 * 4;
-                    break;
-                case TimeInterval.Year:
-                    blocks = 60 * 24 * 7 * 52;
                     break;
                 default:
                     blocks = 0;

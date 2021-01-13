@@ -2,11 +2,10 @@
 {
     public enum TimeInterval
     {
-        FifteenMinutes = 0,
-        Hour = 1,
-        Day = 2,
-        Week = 3,
-        Month = 4,
-        Year = 5
+        FiveMinutes = 0,
+        FifteenMinutes = 1,
+        Hour = 2,
+        TwoHours = 3,
+        Day = 4
     }
 }
