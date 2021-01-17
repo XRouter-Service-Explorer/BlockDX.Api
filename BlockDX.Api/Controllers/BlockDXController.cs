@@ -48,6 +48,11 @@ namespace BlockDX.Api.Controllers
         }
 
         [HttpGet("[action]")]
+        public IActionResult GetTradingData(int blocks)
+        {
+            return Ok(_xBridgeService.dxGetTradingData(blocks, false));
+        }
+        [HttpGet("[action]")]
         public IActionResult GetTotalTradesCount(ElapsedTime elapsedTime)
         {
             var assetWhiteList = _xBridgeService.dxGetNetworkTokens();
